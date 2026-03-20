@@ -16,14 +16,6 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string
-    tanLeidaAccess: boolean
-    tanLeidaId: string | null
-  }
-}
-
 export interface Product {
   id: string
   name: string
@@ -162,6 +154,14 @@ export interface TanLeidaSessionType {
   recommendedProductId?: string | null
   estimatedDelivery?: string | null
   createdAt: Date
+}
+
+export interface Testimonial {
+  id: string
+  name: string
+  city: string
+  quote: string
+  rating: number
 }
 
 export type BodyBuild = 'SLIM' | 'ATHLETIC' | 'REGULAR' | 'BROAD' | 'PLUS'

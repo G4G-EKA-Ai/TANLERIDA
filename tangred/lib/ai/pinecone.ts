@@ -18,15 +18,6 @@ export async function matchProductsFromEmbeddings(params: {
     // Create a query vector from the user profile
     // In production, you'd use an embedding model here
     // For now we use a simplified approach with metadata filtering
-    const queryText = [
-      params.geminiAnalysis.styleSensibility,
-      params.stylePrefs.occasion,
-      params.stylePrefs.productType,
-      params.bodyProfile.gender,
-    ]
-      .filter(Boolean)
-      .join(' ')
-
     // Use zero vector as placeholder — production should use real embeddings
     const queryVector = new Array(1536).fill(0)
 
@@ -59,18 +50,20 @@ export async function upsertProductEmbedding(params: {
   try {
     const index = pinecone.index(INDEX_NAME)
 
-    await index.upsert([
-      {
-        id: params.productId,
-        values: params.embedding,
-        metadata: {
-          name: params.productName,
-          category: params.category,
-          material: params.material,
-          tags: params.tags.join(','),
+    await index.upsert({
+      records: [
+        {
+          id: params.productId,
+          values: params.embedding,
+          metadata: {
+            name: params.productName,
+            category: params.category,
+            material: params.material,
+            tags: params.tags.join(','),
+          },
         },
-      },
-    ])
+      ],
+    })
   } catch (error) {
     console.error('Pinecone upsert error:', error)
   }

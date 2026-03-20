@@ -93,8 +93,8 @@ model Product {
   slug          String    @unique
   description   String
   longDesc      String?
-  basePrice     Float
-  discountPrice Float?
+  basePrice     Int
+  discountPrice Int?
   sku           String    @unique
   stock         Int       @default(0)
   isActive      Boolean   @default(true)
@@ -134,7 +134,7 @@ model ProductVariant {
   size      String?
   finish    String?
   stock     Int     @default(0)
-  priceAdj  Float   @default(0)
+  priceAdj  Int     @default(0)
 }
 
 model ProductTag {
@@ -179,10 +179,10 @@ model Order {
   user            User        @relation(fields: [userId], references: [id])
   orderNumber     String      @unique
   status          OrderStatus @default(PENDING)
-  subtotal        Float
-  gst             Float
-  shippingCharge  Float       @default(0)
-  total           Float
+  subtotal        Int
+  gst             Int
+  shippingCharge  Int         @default(0)
+  total           Int
   addressSnapshot Json
   razorpayOrderId String?
   razorpayPayId   String?
@@ -211,8 +211,8 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   variantId String?
   quantity  Int
-  unitPrice Float
-  total     Float
+  unitPrice Int
+  total     Int
 }
 
 model Review {
@@ -262,8 +262,8 @@ model TanLeidaPayment {
   userId          String
   razorpayOrderId String   @unique
   razorpayPayId   String?
-  amount          Float    @default(99)
-  gstAmount       Float    @default(17.82)
+  amount          Int      @default(9900)
+  gstAmount       Int      @default(1782)
   status          String   @default("pending")
   createdAt       DateTime @default(now())
 }
