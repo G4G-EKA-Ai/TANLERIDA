@@ -6,99 +6,62 @@ import { ChevronDown } from 'lucide-react'
 
 export function HeroSection() {
   return (
-    <section className="relative w-full h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
-      {/* Background — deep leather texture feel */}
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 md:px-10">
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0"
         style={{
-          background: `
-            radial-gradient(ellipse at 30% 50%, rgba(40,20,10,0.8) 0%, transparent 60%),
-            radial-gradient(ellipse at 70% 30%, rgba(30,10,5,0.6) 0%, transparent 50%),
-            linear-gradient(135deg, #0D0604 0%, #1A0D07 30%, #0A0A0A 100%)
-          `,
+          background:
+            'radial-gradient(circle at 20% 35%, rgba(191,160,122,0.12) 0%, transparent 28%), radial-gradient(circle at 75% 40%, rgba(192,57,43,0.14) 0%, transparent 26%), linear-gradient(135deg, #090909 0%, #140c08 40%, #0A0A0A 100%)',
         }}
       />
-
-      {/* Grain overlay */}
       <div className="grain-overlay" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.25),rgba(10,10,10,0.55))]" />
 
-      {/* Red ambient glow — left side */}
-      <div
-        className="absolute left-0 top-1/2 -translate-y-1/2 w-96 h-96 z-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(192,57,43,0.12) 0%, transparent 70%)',
-        }}
-      />
-
-      {/* Content */}
-      <div className="relative z-10 text-center px-6 md:px-10 max-w-5xl mx-auto">
-        {/* Eyebrow */}
+      <div className="relative z-10 mx-auto max-w-6xl text-center">
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
-          className="font-label text-[#C0392B] text-[14px] tracking-[0.4em] mb-6"
+          transition={{ delay: 0.2, duration: 0.7 }}
+          className="mb-6 font-label text-[14px] tracking-[0.4em] text-[#C0392B]"
         >
           TANGRED
         </motion.p>
-
-        {/* H1 */}
         <motion.h1
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.9 }}
-          className="font-display text-[52px] md:text-[72px] lg:text-[88px] text-[#F5F5F5] font-light leading-[1.05]"
-          style={{ letterSpacing: '-0.02em' }}
+          transition={{ delay: 0.35, duration: 0.8 }}
+          className="font-display text-[52px] leading-[1.02] text-[#F5F5F5] md:text-[72px] lg:text-[88px]"
         >
-          Crafted for Those
-          <br />
-          <em className="italic" style={{ color: '#BFA07A', fontStyle: 'italic' }}>Who Command Respect</em>
+          Crafted for Those Who <br />
+          <span className="italic text-[#BFA07A]">Command Respect</span>
         </motion.h1>
-
-        {/* Subheading */}
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.7 }}
-          className="font-body text-[#A0A0A0] text-lg md:text-xl mt-6 max-w-xl mx-auto"
+          transition={{ delay: 0.55, duration: 0.7 }}
+          className="mx-auto mt-6 max-w-2xl text-lg text-[#A0A0A0] md:text-xl"
         >
-          Premium Indian Leather, Tailored to Your Legacy
+          Premium Indian Leather, Tailored to Your Legacy.
         </motion.p>
-
-        {/* CTAs */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.7 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
+          transition={{ delay: 0.75, duration: 0.7 }}
+          className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
-          <Link href="/products" className="btn-primary" id="hero-explore-btn">
+          <Link href="/products" className="btn-primary">
             Explore Collection
           </Link>
-          <Link href="/tan-leida" className="btn-outline" id="hero-tan-leida-btn">
+          <Link href="/tan-leida" className="btn-outline shadow-[0_0_24px_rgba(192,57,43,0.15)]">
             Meet Tan Leida™
           </Link>
         </motion.div>
       </div>
 
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.7 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2"
-      >
-        <span className="font-label text-[#A0A0A0] text-[10px] tracking-[0.3em]">SCROLL</span>
-        <ChevronDown
-          size={18}
-          className="text-[#A0A0A0] animate-[chevronBounce_2s_ease-in-out_infinite]"
-        />
-      </motion.div>
-
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 z-5 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #0A0A0A)' }}
-      />
+      <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 text-[#A0A0A0]">
+        <span className="font-label text-[10px] tracking-[0.35em]">SCROLL</span>
+        <ChevronDown size={18} className="animate-[chevronBounce_2s_ease-in-out_infinite]" />
+      </div>
     </section>
   )
 }

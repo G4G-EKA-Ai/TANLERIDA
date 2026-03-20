@@ -1,10 +1,15 @@
 import { Pinecone } from '@pinecone-database/pinecone'
+import { isConfigured } from '@/lib/utils/guards'
 
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY!,
-})
+const indexName = process.env.PINECONE_INDEX_NAME ?? 'tangred-products'
 
-const INDEX_NAME = process.env.PINECONE_INDEX_NAME ?? 'tangred-products'
+function getClient() {
+  if (!isConfigured(process.env.PINECONE_API_KEY)) {
+    return null
+  }
+
+  return new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string })
+}
 
 export async function matchProductsFromEmbeddings(params: {
   bodyProfile: Record<string, unknown>
@@ -12,40 +17,20 @@ export async function matchProductsFromEmbeddings(params: {
   geminiAnalysis: Record<string, unknown>
   topK: number
 }) {
-  try {
-    const index = pinecone.index(INDEX_NAME)
+  const client = getClient()
 
-    // Create a query vector from the user profile
-    // In production, you'd use an embedding model here
-    // For now we use a simplified approach with metadata filtering
-    const queryText = [
-      params.geminiAnalysis.styleSensibility,
-      params.stylePrefs.occasion,
-      params.stylePrefs.productType,
-      params.bodyProfile.gender,
-    ]
-      .filter(Boolean)
-      .join(' ')
-
-    // Use zero vector as placeholder — production should use real embeddings
-    const queryVector = new Array(1536).fill(0)
-
-    const queryResponse = await index.query({
-      vector: queryVector,
-      topK: params.topK,
-      includeMetadata: true,
-    })
-
-    return queryResponse.matches.map((match) => ({
-      id: match.id,
-      score: match.score,
-      ...match.metadata,
-    }))
-  } catch (error) {
-    console.error('Pinecone query error:', error)
-    // Return empty array if Pinecone unavailable
+  if (!client) {
     return []
   }
+
+  const index = client.index(indexName)
+  const response = await index.query({
+    vector: new Array(1536).fill(0),
+    topK: params.topK,
+    includeMetadata: true,
+  })
+
+  return response.matches.map((match) => ({ id: match.id, score: match.score, ...(match.metadata ?? {}) }))
 }
 
 export async function upsertProductEmbedding(params: {
@@ -56,10 +41,12 @@ export async function upsertProductEmbedding(params: {
   tags: string[]
   embedding: number[]
 }) {
-  try {
-    const index = pinecone.index(INDEX_NAME)
+  const client = getClient()
+  if (!client) return
 
-    await index.upsert([
+  const index = client.index(indexName)
+  await index.upsert({
+    records: [
       {
         id: params.productId,
         values: params.embedding,
@@ -70,8 +57,6 @@ export async function upsertProductEmbedding(params: {
           tags: params.tags.join(','),
         },
       },
-    ])
-  } catch (error) {
-    console.error('Pinecone upsert error:', error)
-  }
+    ],
+  })
 }
