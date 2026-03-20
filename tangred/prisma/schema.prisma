@@ -1,34 +1,38 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "binary"
+  output     = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
+  id               String               @id @default(cuid())
+  email            String               @unique
   name             String?
   passwordHash     String?
-  googleId         String?   @unique
+  googleId         String?              @unique
   avatarUrl        String?
   phone            String?
-  isVerified       Boolean   @default(false)
-  tanLeidaAccess   Boolean   @default(false)
-  tanLeidaId       String?   @unique
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  isVerified       Boolean              @default(false)
+  tanLeidaAccess   Boolean              @default(false)
+  tanLeidaId       String?              @unique
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
+  accounts         Account[]
+  sessions         Session[]
   addresses        Address[]
   orders           Order[]
   cart             Cart?
   wishlist         Wishlist[]
   tanLeidaSessions TanLeidaSession[]
+  tanLeidaPayments TanLeidaPayment[]
   reviews          Review[]
-  accounts         Account[]
-  sessions         Session[]
+  verificationTokens EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Account {
@@ -65,17 +69,40 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Address {
-  id        String  @id @default(cuid())
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
   userId    String
-  user      User    @relation(fields: [userId], references: [id])
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  usedAt    DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  otpCode   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  usedAt    DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
   label     String
   line1     String
   line2     String?
   city      String
   state     String
   pincode   String
-  isDefault Boolean @default(false)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Category {
@@ -84,91 +111,106 @@ model Category {
   slug        String    @unique
   description String?
   imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   products    Product[]
 }
 
 model Product {
-  id            String    @id @default(cuid())
-  name          String
-  slug          String    @unique
-  description   String
-  longDesc      String?
-  basePrice     Float
-  discountPrice Float?
-  sku           String    @unique
-  stock         Int       @default(0)
-  isActive      Boolean   @default(true)
-  isFeatured    Boolean   @default(false)
-  categoryId    String
-  category      Category  @relation(fields: [categoryId], references: [id])
-  material      String
-  origin        String    @default("Handcrafted in India")
-  leadTimeDays  Int       @default(14)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                        String            @id @default(cuid())
+  name                      String
+  slug                      String            @unique
+  description               String
+  longDesc                  String?
+  basePrice                 Int
+  discountPrice             Int?
+  sku                       String            @unique
+  stock                     Int               @default(0)
+  isActive                  Boolean           @default(true)
+  isFeatured                Boolean           @default(false)
+  categoryId                String
+  material                  String
+  origin                    String            @default("Handcrafted in India")
+  leadTimeDays              Int               @default(14)
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
 
-  images        ProductImage[]
-  variants      ProductVariant[]
-  orderItems    OrderItem[]
-  cartItems     CartItem[]
-  wishlist      Wishlist[]
-  reviews       Review[]
-  tags          ProductTag[]
+  category                  Category          @relation(fields: [categoryId], references: [id])
+  images                    ProductImage[]
+  variants                  ProductVariant[]
+  orderItems                OrderItem[]
+  cartItems                 CartItem[]
+  wishlist                  Wishlist[]
+  reviews                   Review[]
+  tags                      ProductTag[]
+  recommendedInSessions     TanLeidaSession[] @relation("TanLeidaRecommendedProduct")
 }
 
 model ProductImage {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   productId String
-  product   Product @relation(fields: [productId], references: [id])
   url       String
   altText   String?
-  isPrimary Boolean @default(false)
-  sortOrder Int     @default(0)
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model ProductVariant {
-  id        String  @id @default(cuid())
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  color     String?
-  size      String?
-  finish    String?
-  stock     Int     @default(0)
-  priceAdj  Float   @default(0)
+  id         String     @id @default(cuid())
+  productId  String
+  color      String?
+  size       String?
+  finish     String?
+  stock      Int        @default(0)
+  priceAdj   Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 }
 
 model ProductTag {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   productId String
-  product   Product @relation(fields: [productId], references: [id])
   tag       String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Cart {
   id        String     @id @default(cuid())
   userId    String     @unique
-  user      User       @relation(fields: [userId], references: [id])
-  items     CartItem[]
   updatedAt DateTime   @updatedAt
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
 }
 
 model CartItem {
-  id        String  @id @default(cuid())
+  id        String          @id @default(cuid())
   cartId    String
-  cart      Cart    @relation(fields: [cartId], references: [id])
   productId String
-  product   Product @relation(fields: [productId], references: [id])
   variantId String?
-  quantity  Int     @default(1)
+  quantity  Int             @default(1)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  cart      Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@unique([cartId, productId, variantId])
 }
 
 model Wishlist {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
 }
@@ -176,20 +218,19 @@ model Wishlist {
 model Order {
   id              String      @id @default(cuid())
   userId          String
-  user            User        @relation(fields: [userId], references: [id])
   orderNumber     String      @unique
   status          OrderStatus @default(PENDING)
-  subtotal        Float
-  gst             Float
-  shippingCharge  Float       @default(0)
-  total           Float
+  subtotal        Int
+  gst             Int
+  shippingCharge  Int         @default(0)
+  total           Int
   addressSnapshot Json
   razorpayOrderId String?
   razorpayPayId   String?
   paidAt          DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items           OrderItem[]
 }
 
@@ -204,34 +245,36 @@ enum OrderStatus {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String          @id @default(cuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
   productId String
-  product   Product @relation(fields: [productId], references: [id])
   variantId String?
   quantity  Int
-  unitPrice Float
-  total     Float
+  unitPrice Int
+  total     Int
+  createdAt DateTime        @default(now())
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 }
 
 model Review {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   userId     String
-  user       User    @relation(fields: [userId], references: [id])
   productId  String
-  product    Product @relation(fields: [productId], references: [id])
   rating     Int
   title      String?
   body       String?
   isApproved Boolean  @default(false)
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model TanLeidaSession {
   id                   String         @id @default(cuid())
   userId               String
-  user                 User           @relation(fields: [userId], references: [id])
   sessionCode          String         @unique
   paymentId            String?
   isPaid               Boolean        @default(false)
@@ -246,6 +289,9 @@ model TanLeidaSession {
   estimatedDelivery    String?
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment              TanLeidaPayment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  recommendedProduct   Product?       @relation("TanLeidaRecommendedProduct", fields: [recommendedProductId], references: [id], onDelete: SetNull)
 }
 
 enum TanLeidaStatus {
@@ -258,12 +304,15 @@ enum TanLeidaStatus {
 }
 
 model TanLeidaPayment {
-  id              String   @id @default(cuid())
+  id              String            @id @default(cuid())
   userId          String
-  razorpayOrderId String   @unique
+  razorpayOrderId String            @unique
   razorpayPayId   String?
-  amount          Float    @default(99)
-  gstAmount       Float    @default(17.82)
-  status          String   @default("pending")
-  createdAt       DateTime @default(now())
+  amount          Int               @default(9900)
+  gstAmount       Int               @default(1782)
+  status          String            @default("pending")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions        TanLeidaSession[]
 }

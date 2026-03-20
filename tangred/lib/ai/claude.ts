@@ -1,50 +1,38 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { isConfigured } from '@/lib/utils/guards'
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+export const TAN_LEIDA_SYSTEM_PROMPT = `You are Tan Leida — Tangred's master tailor and personal style consultant.
+You speak with quiet authority, warmth, and precise craftsmanship language.
+Only recommend Tangred catalogue pieces.
+Always connect your guidance to body profile, skin tone, lifestyle, occasion, and leather craft.
+Never sound pushy. End recommendations with: "This is my recommendation for you — crafted to be worn for a lifetime."`
 
-export const TAN_LEIDA_SYSTEM_PROMPT = `You are Tan Leida — Tangred's master tailor and personal style consultant. 
-Tangred is India's premier luxury leather goods brand, handcrafting pieces 
-for the ambitious, discerning upper-class professional.
+function getAnthropicClient() {
+  if (!isConfigured(process.env.ANTHROPIC_API_KEY)) {
+    return null
+  }
 
-Your role is to guide customers through a bespoke consultation, much like 
-a session with a master tailor at a prestigious atelier. You speak with 
-quiet authority and warmth. Never rush. Never oversell. Your every word 
-reflects craftsmanship and attention to detail.
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+}
 
-Your consultation goals:
-1. Understand exactly what the customer is looking for (product type, occasion)
-2. Understand their lifestyle (corporate, entrepreneur, frequent traveller?)  
-3. Understand their aesthetic preference (classic, contemporary, bold)
-4. Understand practical requirements (size, capacity, durability)
-5. Understand their budget comfort zone
+const model = process.env.ANTHROPIC_TEXT_MODEL ?? 'claude-3-5-sonnet-latest'
 
-Rules:
-- Only recommend products from the Tangred catalogue
-- Always tie your recommendation back to the customer's specific body profile, skin tone, and style
-- Explain WHY this piece will work for THEM specifically
-- Mention the craftsmanship story — the leather type, the finishing technique
-- Be aspirational but not condescending
-- Sign off recommendations with: "This is my recommendation for you — crafted to be worn for a lifetime."
-- Keep responses concise yet rich — never more than 3-4 sentences per turn`
+export async function claudeStyleConsultation(messages: Array<{ role: 'user' | 'assistant'; content: string }>, userContext?: Record<string, unknown>) {
+  const client = getAnthropicClient()
 
-export async function claudeStyleConsultation(
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-  userContext?: Record<string, unknown>
-) {
-  const systemWithContext = userContext
-    ? `${TAN_LEIDA_SYSTEM_PROMPT}\n\nUser Context: ${JSON.stringify(userContext)}`
-    : TAN_LEIDA_SYSTEM_PROMPT
+  if (!client) {
+    return 'What are you looking for today — a boardroom bag, a finishing belt, or a more complete Tangred look?'
+  }
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
-    system: systemWithContext,
+    model,
+    system: `${TAN_LEIDA_SYSTEM_PROMPT}\nUser context: ${JSON.stringify(userContext ?? {})}`,
+    max_tokens: 700,
     messages,
   })
 
-  return response.content[0].type === 'text' ? response.content[0].text : ''
+  const content = response.content.find((entry) => entry.type === 'text')
+  return content && 'text' in content ? content.text : ''
 }
 
 export async function claudeGenerateRecommendation(params: {
@@ -53,42 +41,38 @@ export async function claudeGenerateRecommendation(params: {
   products: Array<Record<string, unknown>>
   stylePreferences: Record<string, unknown>
 }) {
-  const prompt = `Based on the following customer profile, generate a personalised Tangred product recommendation:
+  const client = getAnthropicClient()
 
-Customer Body Profile: ${JSON.stringify(params.userProfile)}
-AI Vision Analysis: ${JSON.stringify(params.geminiAnalysis)}
-Style Preferences: ${JSON.stringify(params.stylePreferences)}
-Top Matched Products: ${JSON.stringify(params.products)}
-
-Generate a JSON response with:
-{
-  "primaryRecommendation": {
-    "productId": "string",
-    "narrative": "2-3 sentence personalised recommendation",
-    "whyItWorks": "specific reasons tied to body profile and style",
-    "craftStory": "leather type and finishing technique story"
-  },
-  "alternatives": [
-    { "productId": "string", "brief": "one-line reason" }
-  ],
-  "visualPrompt": "detailed Stability AI prompt for generating image of user wearing/carrying this product",
-  "signOff": "personalised sign-off message"
-}`
+  if (!client) {
+    const [primary, ...alternatives] = params.products
+    return {
+      primaryRecommendation: {
+        productId: String(primary?.id ?? ''),
+        narrative:
+          'Your profile calls for a disciplined, structured leather silhouette with enough authority for formal work settings while remaining versatile across travel and evening use.',
+        whyItWorks: 'The piece balances your proportions, supports a refined palette, and mirrors a composed professional wardrobe.',
+        craftStory: 'The selected Tangred leather brings controlled texture, careful edge finishing, and long-wear polish.',
+      },
+      alternatives: alternatives.slice(0, 2).map((product) => ({ productId: String(product.id), brief: 'An alternative with a slightly different shape or carry profile.' })),
+      visualPrompt: 'Luxury editorial portrait of the customer carrying a structured Tangred leather bag, dark background, cinematic lighting, premium Indian tailoring aesthetic.',
+      signOff: 'This is my recommendation for you — crafted to be worn for a lifetime.',
+    }
+  }
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2048,
+    model,
     system: TAN_LEIDA_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 1200,
+    messages: [
+      {
+        role: 'user',
+        content: `Return JSON for a Tangred recommendation. Body profile: ${JSON.stringify(params.userProfile)}. Vision analysis: ${JSON.stringify(params.geminiAnalysis)}. Preferences: ${JSON.stringify(params.stylePreferences)}. Products: ${JSON.stringify(params.products)}.`,
+      },
+    ],
   })
 
-  const text =
-    response.content[0].type === 'text' ? response.content[0].text : '{}'
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (jsonMatch) return JSON.parse(jsonMatch[0])
-  return { raw: text }
-}
-
-export async function claudeGetInitialQuestion(): Promise<string> {
-  return "What brings you to Tangred today? Are you looking for something for your boardroom — perhaps a structured office bag or a refined belt — or do you have a particular occasion in mind?"
+  const text = response.content.find((entry) => entry.type === 'text')
+  const raw = text && 'text' in text ? text.text : '{}'
+  const match = raw.match(/\{[\s\S]*\}/)
+  return match ? JSON.parse(match[0]) : { raw }
 }
