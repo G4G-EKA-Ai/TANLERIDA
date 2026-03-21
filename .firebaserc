@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "tangred-ecommerce"
+  },
+  "targets": {
+    "tangred-ecommerce": {
+      "hosting": {
+        "production": [
+          "tangred-ecommerce"
+        ],
+        "staging": [
+          "tangred-staging"
+        ]
+      }
+    }
+  }
+}

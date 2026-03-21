@@ -1,0 +1,155 @@
+# =============================================================================
+# Google Cloud Run Service Configuration
+# TANLERIDA Backend API
+# =============================================================================
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: tangred-api
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        # Scaling configuration
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "10"
+        
+        # Resource limits
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/memory: "2Gi"
+        run.googleapis.com/cpu: "2"
+        
+        # Timeout
+        run.googleapis.com/timeout: "300s"
+        
+        # Service account
+        run.googleapis.com/service-account: tangred-api@tangred-ecommerce.iam.gserviceaccount.com
+        
+        # VPC Connector for Cloud SQL
+        run.googleapis.com/vpc-access-connector: tangred-connector
+        run.googleapis.com/vpc-access-egress: all-traffic
+        
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      
+      containers:
+        - image: gcr.io/tangred-ecommerce/tangred-api:latest
+          ports:
+            - containerPort: 8080
+              name: http1
+          
+          env:
+            # Database
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-url
+                  key: latest
+            
+            # Auth
+            - name: AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: latest
+            
+            # Google OAuth
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: google-client-id
+                  key: latest
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: google-client-secret
+                  key: latest
+            
+            # AI Services
+            - name: GOOGLE_GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-api-key
+                  key: latest
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: anthropic-api-key
+                  key: latest
+            - name: PINECONE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pinecone-api-key
+                  key: latest
+            
+            # Cloudinary
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: cloudinary-cloud-name
+                  key: latest
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cloudinary-api-key
+                  key: latest
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cloudinary-api-secret
+                  key: latest
+            
+            # Razorpay
+            - name: RAZORPAY_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: razorpay-key-id
+                  key: latest
+            - name: RAZORPAY_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: razorpay-key-secret
+                  key: latest
+            
+            # Resend
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: resend-api-key
+                  key: latest
+            - name: FROM_EMAIL
+              value: "noreply@tangred.in"
+            
+            # App Config
+            - name: NEXT_PUBLIC_APP_URL
+              value: "https://tangred.in"
+            - name: NODE_ENV
+              value: "production"
+          
+          resources:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+          
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            periodSeconds: 30
+            failureThreshold: 3
