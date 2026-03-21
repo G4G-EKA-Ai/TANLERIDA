@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/generated/prisma/client'
+import { PrismaClient } from '../generated/prisma/client'
 
 const globalForPrisma = globalThis as typeof globalThis & {
   __tangredPrisma?: PrismaClient
