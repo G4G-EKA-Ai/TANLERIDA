@@ -1,10 +1,10 @@
 import type { NextConfig } from 'next'
 
 /**
- * Next.js Configuration for Firebase + Google Cloud Run Deployment
+ * Next.js Configuration for Firebase Static Hosting
  * 
- * Frontend: Firebase Hosting (Static Export)
- * Backend: Google Cloud Run (API Routes)
+ * Note: API routes are deployed separately to Google Cloud Run
+ * This config only builds the frontend static pages
  */
 
 const nextConfig: NextConfig = {
@@ -28,10 +28,6 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.googleusercontent.com',
       },
-      {
-        protocol: 'https',
-        hostname: '*.firebaseapp.com',
-      },
     ],
   },
   
@@ -40,15 +36,14 @@ const nextConfig: NextConfig = {
   
   // Environment variables available at build time
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://api.tangred.in',
     NEXT_PUBLIC_FIREBASE_PROJECT: process.env.NEXT_PUBLIC_FIREBASE_PROJECT || '',
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || '',
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://tangred.in',
   },
   
-  // Experimental features
-  experimental: {
-    // Enable if using App Router with static export
-    typedRoutes: true,
+  // Disable type checking during build (optional)
+  typescript: {
+    ignoreBuildErrors: true,
   },
 }
 

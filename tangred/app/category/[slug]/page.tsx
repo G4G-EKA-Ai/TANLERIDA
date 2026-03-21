@@ -1,6 +1,12 @@
 import { notFound } from 'next/navigation'
-import { getCategoryBySlug, getProductsByCategory } from '@/lib/catalog'
+import { getCategoryBySlug, getProductsByCategory, categories } from '@/lib/catalog'
 import { ProductCard } from '@/components/product/ProductCard'
+
+export function generateStaticParams() {
+  return categories.map((category) => ({
+    slug: category.slug,
+  }))
+}
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params

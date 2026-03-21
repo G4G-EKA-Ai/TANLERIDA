@@ -2,9 +2,15 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Heart, Minus, Plus, Truck } from 'lucide-react'
-import { getProductBySlug, getRelatedProducts } from '@/lib/catalog'
+import { getProductBySlug, getRelatedProducts, products } from '@/lib/catalog'
 import { formatDeliveryWindow, formatPrice } from '@/lib/format'
 import { ProductCard } from '@/components/product/ProductCard'
+
+export function generateStaticParams() {
+  return products.map((product) => ({
+    slug: product.slug,
+  }))
+}
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
