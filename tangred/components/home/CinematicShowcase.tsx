@@ -1,18 +1,21 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Play, Sparkles } from 'lucide-react'
-import { featuredProducts, categories } from '@/lib/catalog'
+import { featuredProducts } from '@/lib/catalog'
 import { formatPrice } from '@/lib/format'
 
-const spotlightProduct = featuredProducts[0]
-const supportingProducts = featuredProducts.slice(1, 4)
-const featuredCategories = categories.slice(0, 4)
+const showcasedProducts = featuredProducts.slice(0, 4)
+const spotlightProduct = showcasedProducts[0]
+const supportingProducts = showcasedProducts.slice(1)
+const featuredCategories = Array.from(
+  new Map(showcasedProducts.map((product) => [product.category.id, product.category])).values()
+)
 
 const averageLeadTimeDays =
-  featuredProducts.reduce((total, product) => total + product.leadTimeDays, 0) / Math.max(featuredProducts.length, 1)
+  showcasedProducts.reduce((total, product) => total + product.leadTimeDays, 0) / Math.max(showcasedProducts.length, 1)
 
 const metrics = [
-  { value: `${featuredProducts.length}`, label: 'featured picks' },
+  { value: `${showcasedProducts.length}`, label: 'featured picks' },
   { value: `${featuredCategories.length}`, label: 'editorial categories' },
   { value: `${Math.round(averageLeadTimeDays)} days`, label: 'average lead time' },
 ]
